@@ -1,161 +1,214 @@
-var Web3 = require('web3');
-var web3 = new Web3(new Web3.providers.HttpProvider("https://ropsten.infura.io/2UM4W5tzvCJBFTpH0RFB"));
+'use strict'
+var express = require("express");
+var router = express.Router();
+var ipfsAPI = require('ipfs-api');
+var config = require("../config");
+// -----------------------------------
+// connect to ipfs daemon API server
+var ipfs = ipfsAPI(config.ipfs.domain, config.ipfs.port, {protocol: config.ipfs.protocol });
+// -----------------------------------
+var ethers = require('ethers');
+// var provider = new ethers.providers.getDefaultProvider('ropsten');
+var etherscanProvider = new ethers.providers.EtherscanProvider("ropsten");
+// -----------------------------------
+//wallet para transacciones
+var wallet = new ethers.Wallet(config.ethereum.privateKey,etherscanProvider);
+var contract_sign = new ethers.Contract(config.ethereum.contractAddress, config.ethereum.abi, wallet);
 
-var contractAdd = '0x492ac64c927bd9da956b981228ca839ffb09d8f6';
-var CONTRACT = new web3.eth.Contract([{"constant":true,"inputs":[],"name":"getCommunityName","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"uint256"}],"name":"listOfBabies","outputs":[{"name":"registeredName","type":"string"},{"name":"hashFingerprint","type":"string"},{"name":"mothersAddress","type":"address"},{"name":"hospitalAddress","type":"address"},{"name":"genero","type":"uint8"},{"name":"birthDay","type":"uint256"},{"name":"timeStamp","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_motherAddress","type":"address"}],"name":"getBabyByMotherAddress","outputs":[{"name":"registeredName","type":"string"},{"name":"hashFingerprint","type":"string"},{"name":"hospitalAddress","type":"address"},{"name":"genero","type":"uint8"},{"name":"birthDay","type":"uint256"},{"name":"timeStamp","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_communityName","type":"string"}],"name":"setCommunityName","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_registeredName","type":"string"},{"name":"_hashFingerprint","type":"string"},{"name":"_mothersAddress","type":"address"},{"name":"_hospitalAddress","type":"address"},{"name":"_genero","type":"uint8"},{"name":"_birthDay","type":"uint256"}],"name":"registerBaby","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_communityName","type":"string"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"name":"registeredName","type":"string"},{"indexed":false,"name":"timeStamp","type":"uint256"}],"name":"resultRegister","type":"event"}]);
-CONTRACT.options.address = contractAdd;
-    
-var appRouter = function (app) {
-    
-    // -----------------
-    // SAMPLE
-    // -----------------
+//Todas las transacciones, filtrados por address account
+router.get("/babies/transactions/:addressAccount", function(req, res) {
+    var babies = [];
+    var addressAccount = req.params.addressAccount;
 
-    app.get("/API/babies/sample/:id&:name", function(req, res) {
-        var users = [];
-        var num = req.params.id;
-    
-        if (isFinite(num) && num  > 0 ) {
-           
-            web3.eth.getAccounts(function(error, result) {
-                users.push({
-                    firstName: "Miguel Angel",
-                    email: "miguel@email.com",
-                    defaultAccount: result[0],
-                    id:num,
-                    name: req.params.name
-                });
-                res.status(200).send(users);
-            });
-            // console.log(accounts);
-        } else {
-            res.status(400).send({ message: 'invalid number supplied' }); 
-        }   
-    });
-
-    // -----------------
-    // COMMUNITY NAME
-    // -----------------
-    app.get("/API/babies/getCommunityName/", function(req, res) {
-        var babies = [];
-        var defaultAccount = '0xb483fb2160e53ef745c85f6a59781ce8f0ddc323';
-
-        CONTRACT.methods.getCommunityName().call(
+    etherscanProvider.getHistory(config.ethereum.contractAddress).then(function(history) {
+        if(history.length > 0)
         {
-            from: defaultAccount
-        }
-        ,function(error, result){
-            
-            if(!error){
-                babies.push({
-                    result: "OK",
-                    communityName:result
-                });
-            }else{
-                babies.push({
-                    error: error
-                });
+            for(var i=0; i < history.length; i++){
+                if(history[i].from.toUpperCase() == addressAccount.toUpperCase()){
+                    babies.push({
+                        result: "OK",
+                        tx_hash: history[i].hash
+                    });
+                }            
             }
-            res.status(200).send(babies)
-        });
+        }
+        res.status(200).send(babies); 
     });
+});
+
+//Detalle de transaccion, filtrado por tx_hash
+router.get("/babies/transactions/detail/:tx_hash", function(req, res) {
+    var babies = [];
+    var tx_hash = req.params.tx_hash;
+    provider.getTransaction(tx_hash).then(function(transaction) {
+        babies.push({
+            result: "OK",
+            transaction: transaction
+        });
+        res.status(200).send(babies); 
+    });
+});
+
+
+//Devuelve el nombre de la institucion
+router.get("/babies/getCommunityName/", function(req, res) {
+    var babies = [];
+    var callPromise = contract_sign.getCommunityName();
+
+    callPromise.then(function(result){
+        babies.push({
+            result: "OK",
+            value: result
+        });
+        res.status(200).send(babies); 
+    });
+});
     
-    app.post("/API/babies/setCommunityName/", function(req, res) {
-        var babies = [];
-        var communityName = req.body.communityName;
-        var defaultAccount = '0xb483fb2160e53ef745c85f6a59781ce8f0ddc323';
-        web3.eth.personal.unlockAccount(defaultAccount, "T3n3k12345*", 600).then(function(){
-            CONTRACT.methods.setCommunityName(communityName).send(
-                {
-                    from: defaultAccount,
-                    gasLimit:3000000,
-                    gas:3000000
-                }
-                ,function(error, result){          
-                    if(!error){
-                        babies.push({
-                            result: "OK",
-                            tx:result
-                        });
-                    }else{
-                        babies.push({
-                            error: error
-                        });
-                    }
-                    res.status(200).send(babies);
-                });
+//Set del nombre de la institucion
+router.post("/babies/setCommunityName/", function(req, res) {
+    var babies = [];
+    var communityName = req.body.communityName;
+    var sendPromise = contract_sign.setCommunityName(communityName);
+
+    sendPromise.then(function(transaction){
+        // console.log(transaction);
+        babies.push({
+            result: "OK",
+            tx_hash: transaction.hash
         });
+        res.status(200).send(babies); 
+    });       
+});
 
-        
-    });
-
-    // -----------------
-    //  BABIES
-    // -----------------
-    app.post("/API/babies/register/", function(req, res) {
-        var babies = [];
+//Inserta un nuevo registro de Bebes
+router.post("/babies/", async function(req, res) {
+    var babies = [];
+    try
+    {
+        var strBabyHashFingerprint = req.body.babyHashFingerprint;
         var strRegisteredName = req.body.registeredName;
-        var strHashFingerprint = req.body.hashFingerprint;
-        var addrMothersAddress = req.body.mothersAddress;
-        var addrhospitalAddress = req.body.hospitalAddress;
         var uintGenero = req.body.genero;
         var uintBirthDay = req.body.birthDay;
+        var addrHospitalAddress = req.body.hospitalAddress;
+
+        //TODO: Send to IPFS Server
+        var strImgMotherFront = req.body.imgMotherFront;
+        var strImgFatherFront = req.body.imgFatherFront;
+        var strImgMotherBack = req.body.imgMotherBack;
+        var strFatherBack = req.body.imgFatherBack;
+
+        var buffer_imgMotherFront = new Buffer(strImgMotherFront, 'base64');
+        var buffer_imgFatherFront= new Buffer(strImgFatherFront, 'base64');
+        var buffer_imgMotherBack = new Buffer(strImgMotherBack, 'base64');
+        var buffer_imgFatherBack = new Buffer(strFatherBack, 'base64');
+
+        var files = [
+            {
+            path: "ImgMotherFront",
+            content: buffer_imgMotherFront
+            },
+            {
+                path: "ImgFatherFront",
+                content: buffer_imgFatherFront
+            },
+            {
+                path: "ImgMotherBack",
+                content: buffer_imgMotherBack
+            },
+            {
+                path: "FatherBack",
+                content: buffer_imgFatherBack
+            }
+        ];
+
+        const result_ipfs = await ipfs.files.add(files);
+
+        var aData = [{
+            motherHashFingerprint: req.body.motherHashFingerprint,
+            motherName: req.body.motherName,
+            fatherHashFingerprint: req.body.fatherHashFingerprint,
+            fatherName: req.body.fatherName,
+            doctorName: req.body.doctorName,
+            countryCode: req.body.countryCode,
+            ipfs_files: result_ipfs
+        }];
+        var strData = JSON.stringify(aData); 
+       
+
+        contract_sign.getBabyByHashFingerprint(strBabyHashFingerprint).then(function(transaction){
+            if(transaction._registeredName == ""){
                 
-        var defaultAccount = '0xb483fb2160e53ef745c85f6a59781ce8f0ddc323';
-
-        CONTRACT.methods.registerBaby(strRegisteredName, strHashFingerprint, addrMothersAddress, addrhospitalAddress,
-            uintGenero, uintBirthDay).send(
-        {
-            from: defaultAccount,
-            gasLimit:3000000,
-            gas:3000000
-        }
-        ,function(error, result){          
-            if(!error){
-                babies.push({
-                    result: "OK",
-                    tx: result
+                var sendPromise = contract_sign.registerBaby(strRegisteredName, strBabyHashFingerprint,uintGenero, uintBirthDay, strData, addrHospitalAddress);
+                sendPromise.then(function(transaction){
+                    babies.push({
+                        result: "OK",
+                        tx_hash: transaction.hash
+                    });
+                    res.status(200).send(babies); 
                 });
             }else{
                 babies.push({
-                    error: error
+                    result: "OK",
+                    message: "The baby is already registered in blockchain."
                 });
+                res.status(200).send(babies); 
             }
-
-            res.status(200).send(babies);
         });
-    });
+    } 
+    catch(error)
+    {
+        babies.push({
+            result: "ERROR",
+            error: error
+        });
+        res.status(500).send(babies); 
+    }
+});
 
-    app.get("/API/babies/getBabyByMotherAddress/:address", function(req, res) {
-        var babies = [];
-        var addressMother = req.params.address;
-        var defaultAccount = '0xb483fb2160e53ef745c85f6a59781ce8f0ddc323';
 
-        CONTRACT.methods.getBabyByMotherAddress(addressMother).call(
-        {
-            from: defaultAccount
-        }
-        ,function(error, result){
-            console.log(result);
-            if(!error){
+//Devuelve el registro del bebe por el hash256
+router.get("/babies/:babyHashFingerprint", function(req, res) {
+    var babies = [];
+    try {
+        var babyHashFingerprint = req.params.babyHashFingerprint;
+
+        contract_sign.getBabyByHashFingerprint(babyHashFingerprint).then(function(transaction){
+            if(transaction._registeredName != ""){
+                var aData = JSON.parse(transaction._data);
+
                 babies.push({
                     result: "OK",
-                    registeredName: result.registeredName,
-                    hashFingerprint: result.hashFingerprint,
-                    hospitalAddress: result.hospitalAddress,
-                    genero: result.genero,
-                    birthDay: result.birthDay,
-                    timeStamp: result.timeStamp
+                    registeredName: transaction._registeredName,
+                    genero: transaction._genero.toString(),
+                    birthDay: transaction._birthDay.toString(),
+                    timeStamp: transaction._timeStamp.toString(),
+                    hospitalAddress: transaction._hospitalAddress,
+                    motherHashFingerprint: aData[0].motherHashFingerprint,
+                    motherName: aData[0].motherName,
+                    fatherHashFingerprint: aData[0].fatherHashFingerprint,
+                    fatherName: aData[0].fatherName,
+                    doctorName: aData[0].doctorName,
+                    countryCode: aData[0].countryCode,
+                    ipfs_files: aData[0].ipfs_files
                 });
+
             }else{
                 babies.push({
-                    error: error
+                    result: "ERROR",
+                    message: "The baby is not registered in blockchain."
                 });
             }
-            res.status(200).send(babies)
+            res.status(200).send(babies); 
+        }); 
+    } 
+    catch(error)
+    {
+        babies.push({
+            result: "ERROR",
+            error: error
         });
-    });
+        res.status(500).send(babies); 
+    }
+});
 
-}
-
-module.exports = appRouter;
+module.exports = router;
