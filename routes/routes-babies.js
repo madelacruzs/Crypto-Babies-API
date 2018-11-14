@@ -8,7 +8,7 @@ var config = require("../config");
 var ipfs = ipfsAPI(config.ipfs.domain, config.ipfs.port, {protocol: config.ipfs.protocol });
 // -----------------------------------
 var ethers = require('ethers');
-// var provider = new ethers.providers.getDefaultProvider('ropsten');
+// var provider = ethers.providers.getDefaultProvider('ropsten');
 var etherscanProvider = new ethers.providers.EtherscanProvider("ropsten");
 // -----------------------------------
 //wallet para transacciones
@@ -40,7 +40,7 @@ router.get("/babies/transactions/:addressAccount", function(req, res) {
 router.get("/babies/transactions/detail/:tx_hash", function(req, res) {
     var babies = [];
     var tx_hash = req.params.tx_hash;
-    provider.getTransaction(tx_hash).then(function(transaction) {
+    etherscanProvider.getTransaction(tx_hash).then(function(transaction) {
         babies.push({
             result: "OK",
             transaction: transaction

@@ -1,18 +1,27 @@
 {
-  "name": "crypto-babies",
+  "name": "bcbabies",
   "version": "1.0.0",
-  "description": "baby identity registration",
+  "description": "Blockchain project to save fingerprints of newborns and link their ID to parents, allowing track of ID to the hospital where the babies were born.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "starts": "nodemon server.js"
   },
-  "author": "Miguel De La Cruz",
-  "license": "ISC",
+  "author": "Luis Garcia, NEORIS",
+  "license": "MIT",
   "dependencies": {
     "body-parser": "^1.18.3",
-    "ethers": "^4.0.7",
-    "express": "^4.16.3",
-    "ipfs-api": "^25.0.0",
+    "cors": "^2.8.4",
+    "ethers": "^3.0.29",
+    "express": "^4.16.4",
+    "ipfs-api": "^24.0.2",
+    "mongoose": "^5.3.12",
+    "nodemon": "^1.18.4",
+    "truffle-contract": "^3.0.6",
     "web3": "^1.0.0-beta.36"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.3"
   }
 }

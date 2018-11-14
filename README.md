@@ -1,4 +1,5 @@
-# Crypto-Babies-API
-baby identity registration in blockchain of ethereum
+# blockchain-bornregister
+Infant born registration in ethereum blockchain
 
-This project is an API in node js that connects via web3 to consume a smart contract in Ethereum
+The main data of the born are recorded.
+The fingerprint of the born is taken as a key
