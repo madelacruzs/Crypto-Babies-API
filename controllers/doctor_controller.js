@@ -98,3 +98,34 @@ exports.getbyid_doctor = function(req, res) {
         res.status(200).send(err);
     }
 };
+
+//Update
+exports.update_doctor = function(req, res) {
+    var result = [];
+    const rid = req.params.id;
+    try
+    {
+        Doctor.findByIdAndUpdate(rid, 
+            { $set: 
+                { 
+                    id_hospital: req.body.id_hospital,
+                    name: req.body.name,
+                    lastname: req.body.lastname,
+                    secondlastname: req.body.secondlastname,
+                    profesionalid: req.body.profesionalid,
+                    bcaddress: req.body.bcaddress
+                }
+            }, 
+            { 
+                new: true 
+            }, 
+            function (err, tank) {
+                if (err){
+                    res.status(200).send(err);
+                } 
+                res.status(200).send(tank);          
+            });
+    }catch(err){
+        res.status(200).send(err);
+    }
+};

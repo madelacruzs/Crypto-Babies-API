@@ -12,7 +12,7 @@ exports.add_hospital = function(req, res) {
         registrynumber: req.body.registrynumber,
         address: req.body.address,
         bcaddress: req.body.bcaddress,
-        phone: req.body.phone,
+        phone: req.body.phone
     });
 
     hospital.save(function(err) {
@@ -88,5 +88,33 @@ exports.getbyid_hospital = function(req, res) {
 };
 
 
-
-
+//Update
+exports.update_hospital = function(req, res) {
+    var result = [];
+    const rid = req.params.id;
+    try
+    {
+        Hospital.findByIdAndUpdate(rid, 
+            { $set: 
+                { 
+                    name: req.body.name,
+                    rfc: req.body.rfc,
+                    registrynumber: req.body.registrynumber,
+                    address: req.body.address,
+                    bcaddress: req.body.bcaddress,
+                    phone: req.body.phone
+                }
+            }, 
+            { 
+                new: true 
+            }, 
+            function (err, tank) {
+                if (err){
+                    res.status(200).send(err);
+                } 
+                res.status(200).send(tank);          
+            });
+    }catch(err){
+        res.status(200).send(err);
+    }
+};
