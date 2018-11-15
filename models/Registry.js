@@ -38,4 +38,4 @@ var registry = new mongoose.Schema({
 });
 
 var Registry = mongoose.model('Registry', registry );
-module.exports = Hospital;
+module.exports = Registry;
