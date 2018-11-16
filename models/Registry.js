@@ -2,17 +2,9 @@ var mongoose = require('mongoose');
 
 var registry = new mongoose.Schema({  
     _id: mongoose.Schema.Types.ObjectId,
-    idhospital: 
-    {
-        type: String,
-        required: true
-    },
-    iddoctor: 
-    {
-        type: String    },
-    name: 
-    {
-        type: String    },
+    idhospital: { type: String },
+    iddoctor: { type: String },
+    name: { type: String },
     hashfingerprint: { type: String },
     birthday: { type: Date },
     blockchain_hospital_address: { type: String },
