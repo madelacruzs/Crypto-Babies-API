@@ -5,17 +5,11 @@ var registry = new mongoose.Schema({
     idhospital: 
     {
         type: String,
-        index: { 
-            unique: true 
-        },
         required: true
     },
     iddoctor: 
     {
         type: String,
-        index: { 
-            unique: true 
-        },
         required: true
     },
     name: 
