@@ -9,14 +9,10 @@ var registry = new mongoose.Schema({
     },
     iddoctor: 
     {
-        type: String,
-        required: true
-    },
+        type: String    },
     name: 
     {
-        type: String,
-        required: true
-    },
+        type: String    },
     hashfingerprint: { type: String },
     birthday: { type: Date },
     blockchain_hospital_address: { type: String },
